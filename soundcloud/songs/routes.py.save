@@ -1,0 +1,92 @@
+from flask import Blueprint
+from flask import render_template, url_for, flash, redirect, request
+from soundcloud import db
+from flask_login import login_required, current_user
+from soundcloud.songs.forms import UploadForm, UpdateSongForm
+from soundcloud.users.utils import upload_song, create_object, save_media, update_object
+from soundcloud.songs.model import PlayCount
+from soundcloud.services import get_all_comments, get_song, get_path, get_count
+
+songs = Blueprint("songs", __name__)
+
+
+@songs.route("/upload", methods=["GET", "POST"])
+@login_required
+def upload_song():
+    form = UploadForm()
+    if form.validate_on_submit() and request.method == "POST":
+        song_file = request.files["song_file"]
+        song = upload_song(form.title.data, form.song_image.data, song_file)
+       # create_object(form.title.data, song.id)
+        flash("Your song has been uploaded!", "success")
+        return redirect(url_for("songs.song", song_id=song.id))
+    return render_template(
+        "upload_song.html", title = "New Song", form = form, legend = "New Song"
+    )
+
+
+@songs.route("/song/<int:song_id>", methods = ["GET"])
+def song(song_id):
+    comments=get_all_comments(song_id)
+    song=get_song(song_id)
+    filepath=get_path(song.filepath)
+    image_file=get_path(song.image_file)
+    count=get_count(song_id)
+    return render_template(
+        "songs.html",
+        title = "Song details",
+        count = count,
+        song = song,
+        comments = comments,
+        song_id = song_id,
+        image_file = image_file,
+        filepath = filepath,
+    )
+
+
+@songs.route("/songs/play_count", methods = ["POST"])
+@login_required
+def play_count():
+    res=request.get_json()
+    if len(res) == 1:
+        check=PlayCount.query.filter_by(
+            song_id = res["song_id"], user_name = current_user.id).first()
+        if check is None:
+            playCount=PlayCount(user_name = current_user.id,
+                                song_id = res["song_id"])
+            db.session.add(playCount)
+            db.session.commit()
+    return redirect(request.referrer)
+
+
+@songs.route("/update-song/<song_id>", methods = ["GET", "POST"])
+@login_required
+def update_song(song_id):
+    form=UpdateSongForm()
+    song=get_song(song_id)
+    filepath=get_path(song.filepath)
+    image_file=get_path(song.image_file)
+    if song.user_id == current_user.id:
+        if form.validate_on_submit():
+            if form.picture.data:
+                picture_file="static/img/" + save_media(
+                    form.picture.data, "static/img"
+                )
+                song.image_file = picture_file
+            song.title = form.title.data
+            db.session.commit()
+            update_object(form.title.data, song_id)
+        
+    flash("Your song has been updated!", "success")
+            return redirect(url_for("songs.song", song_id=song_id))
+        elif request.method == "GET":
+            form.title.data = song.title
+        return render_template(
+            "update-song.html",
+            title="Edit Song",
+            image_file=image_file,
+            song=song,
+            form=form,
+        )
+    else:
+        return render_template("500.html")

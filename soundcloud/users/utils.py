@@ -1,0 +1,75 @@
+import os
+import secrets
+from soundcloud import db
+from PIL import Image
+from soundcloud import app
+from soundcloud.songs.model import Songs, Comments
+from flask_login import current_user
+
+
+def save_media(media, *path):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(media.filename)
+    media_file = random_hex + f_ext
+    # print(f_ext)
+    if f_ext == ".mp3" or f_ext == ".ogg" or f_ext == ".wav":
+        song_path = os.path.join(app.root_path, "static/audio", media_file)
+        print(media_file)
+        media.save(song_path)
+        return media_file
+    else:
+        picture_path = os.path.join(app.root_path, f"{path[0]}", media_file)
+        if path[0] == "static/profile_pics" or path[0] == "static/img":
+            output_size = (125, 125)
+        i = Image.open(media)
+        i.thumbnail(output_size)
+        i.save(picture_path)
+
+        return media_file
+
+
+def upload_songs(*args):
+    if args[1]:
+        picture_file = "static/img/" + save_media(args[1], "static/img")
+    else:
+        picture_file = "static/img/" + "default.jpg"
+
+    filename = "audio/" + save_media(args[2])
+    song = Songs(
+        title=args[0],
+        image_file=picture_file,
+        filepath=filename,
+        author=current_user,
+    )
+    db.session.add(song)
+    db.session.commit()
+    return song
+
+
+def post_comments(res):
+    comment = Comments(
+        user_name=current_user.username,
+        song_id=res["song_id"],
+        comment=res["text"],
+        timestamp=res["timestamp"],
+    )
+    db.session.add(comment)
+    db.session.commit()
+
+
+# def create_object(title, song_id):
+#     es.index(
+#         index="soundcloud",
+#         doc_type="songs",
+#         id=song_id,
+#         body={"title": title, "Song_id": song_id},
+#     )
+
+
+# def update_object(title, song_id):
+#     es.update(
+#         index="soundcloud",
+#         doc_type="songs",
+#         id=song_id,
+#         body={"doc": {"title": title, "Song_id": song_id}},
+#     )

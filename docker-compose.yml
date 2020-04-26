@@ -1,0 +1,68 @@
+version: "3.3"
+
+services:
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    volumes:
+      - "redis-data:/data"
+    expose:
+      - "6379"
+
+  web:
+    build: ./
+    container_name: web
+    command: gunicorn -w 2 -b :8000 run:app
+    expose:
+      - "8000"
+    ports:
+      - "5000:8000"
+
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    container_name: postgres
+    build: ./postgres
+    restart: always
+    environment:
+      DB_NAME: soundcloud
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432"
+
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  nginx:
+    container_name: nginx
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    expose:
+      - "80"
+
+    ports:
+      - "8080:80"
+
+    depends_on:
+      - web
+
+  celery:
+    container_name: celery
+    build: .
+    command: celery worker -A soundcloud.celery --loglevel=info
+    volumes:
+      - "celery-data:/celerydata"
+    depends_on:
+      - redis
+      - web
+      - postgres
+
+volumes:
+  postgres-data:
+  redis-data:
+  celery-data:

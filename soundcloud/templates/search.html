@@ -1,0 +1,19 @@
+{% extends "layout.html" %} {% block content %}
+
+<h1>Search Results</h1>
+<div class="container">
+    {%if res=="Not Found" %}
+    <h2>File Not found</h2>
+    {%else%} {%for song in res%}
+    <ul>
+        <li>
+            <a href="{{url_for('songs.song',song_id=song['_source']['Song_id'])}}">
+
+                {{ song['_source']['title'] }}
+            </a>
+        </li>
+
+    </ul>
+    {%endfor%} {%endif%}
+</div>
+{% endblock %}

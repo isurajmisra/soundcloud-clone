@@ -1,0 +1,39 @@
+{% extends "layout.html" %} {% block content %} {% for song in songs.items %}
+<br>
+<div class="media">
+    <img class="d-flex mr-3" src={{song.image_file}}>
+    <div class="media-body">
+        <input type="hidden" id="song_id" value={{song.id}}>
+        <a href="{{url_for('songs.song',song_id=song.id)}}">
+            <h4> {{song.title}}</h4>
+        </a>
+        {%for s in play%} {%if s[0] == song.id %}
+        <small>PlayCount :{{s[1]}} </small> {%endif%} {%endfor%}
+
+        <br> {% if current_user.is_authenticated %}
+        <audio controls class="audio-player" onplaying="countfn({{song.id}})">
+            <source src="{{url_for('static/',filename=song.filepath)}}" type="audio/mpeg" loop="false" autostart="false"
+                hidden="true">
+        </audio> {%else%}
+        <audio controls class="audio-player">
+            <source src="{{url_for('static/',filename=song.filepath)}}" type="audio/mpeg" loop="false" autostart="false"
+                hidden="true">
+        </audio> {%endif%} {% if current_user.is_authenticated %}
+
+        <button class="comment-btn">Comment</button>
+        <div id="comment-body" class="media-body"></div>{% endif %}
+        <a href="{{url_for('songs.song',song_id=song.id)}} ">view comments</a>
+
+        <div class="media-body">{% if current_user.is_authenticated %}{% if current_user.is_liking(song) %}
+            <a href="{{ url_for('users.like_action', song_id=song.id, action='unlike') }}">Unlike</a> {% else %}
+            <a href="{{ url_for('users.like_action', song_id=song.id, action='like') }}">Like</a>
+            {% endif %}{{ song.likes.count() }} likes {% else%} {{ song.likes.count() }} likes {%endif%}
+        </div>
+
+    </div>
+</div> {% endfor %}
+<br> {% for page_num in songs.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+{% if page_num %} {% if songs.page == page_num %}
+<a class="btn btn-info mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a> {% else %}
+<a class="btn btn-outline-info mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a> {% endif %}
+{% else %} ... {% endif %} {% endfor %} {% endblock content %}

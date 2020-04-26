@@ -1,0 +1,39 @@
+{% extends "layout.html" %} {% block content %}
+<div class="content-section">
+    <div class="media">
+        <img class="rounded-circle account-img" src="{{ image_file }}">
+        <div class="media-body">
+            <input id="user_id" type="hidden" value={{current_user.id}}>
+            <h2 id="username" class="account-heading">{{ current_user.username }}</h2>
+            <p id="email" class="text-secondary">{{ current_user.email }}</p>
+
+            <div>
+                <a href="{{url_for('users.update_account')}}">Edit your Profile</a>
+                <button class="btn btn-outline-info" id="bg-download" onclick="startTask()">Download your Info</button>
+            </div>
+            <br>
+            <div id="progress"></div>
+
+            <div class="inner-media-body"></div>
+        </div>
+    </div>
+</div>
+
+<div class="content-section">
+    <h2 class="upload-head">Songs Uploaded by You</h2>
+    <br>
+    <ul>
+        {% for song in songList %}
+        <li class="list-group-item">
+            <a class="song_title" href="{{url_for('songs.song',song_id=song.id)}}">{{song.title}}
+                 <a class="btn btn-sm float-right delete" href="{{url_for('songs.update_song',song_id=song.id)}}">Edit Song Details</a>
+            </a>
+        </li>
+        {%endfor%}
+    </ul>
+
+
+    <!-- <button class="btn btn-sm float-right delete">Edit Song Details</button> -->
+</div>
+
+{% endblock content %}

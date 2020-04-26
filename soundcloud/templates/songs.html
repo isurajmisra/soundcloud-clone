@@ -1,0 +1,36 @@
+{% extends "layout.html" %} {% block content %}
+<div class="media">
+    <img class="d-flex mr-3" src="{{url_for('static',filename=image_file)}}">
+    <div class="media-body">
+        <input type="hidden" id="song_id" value={{song_id}}>
+        <h4> {{song.title}}</h4>
+        <small>PlayCount : {{count}}</small>
+        <br> {% if current_user.is_authenticated %}
+        <audio controls class="audio-player" onplaying="countfn({{ song.id }})">
+            <source src="{{url_for('static/',filename=song.filepath)}}" type="audio/mpeg" loop="false" autostart="false"
+                hidden="true">
+        </audio> {%else%}
+        <audio controls class="audio-player">
+            <source src="{{url_for('static/',filename=song.filepath)}}" type="audio/mpeg" loop="false" autostart="false"
+                hidden="true">
+        </audio> {%endif%} {% if current_user.is_authenticated %}
+        <button class="comment-btn">Comment</button> {% endif %}
+        <div id="comment-body" class="media-body"></div>
+
+        <div class="media-body">{% if current_user.is_authenticated %}{% if current_user.is_liking(song) %}
+            <a href="{{ url_for('users.like_action', song_id=song.id, action='unlike') }}">Unlike</a> {% else %}
+            <a href="{{ url_for('users.like_action', song_id=song.id, action='like') }}">Like</a>
+            {% endif %}{{ song.likes.count() }} likes {% else%} {{ song.likes.count() }} likes {%endif%}
+        </div> <br><br id="line-break">
+        <div>{%for comment in comments%}
+            <div class="media-body">
+
+                <h2>{{comment.user_name}}</h2>
+
+                <p>{{comment.comment}}</p>
+                <small>timestamp :<a class="link"> {{comment.timestamp}} </a> </small>
+            </div><br> {%endfor%}
+
+        </div>
+    </div>
+    {% endblock content %}
